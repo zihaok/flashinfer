@@ -203,6 +203,8 @@ exclude = [
   # Same class: a CuTe DSL kernel body, kept byte-faithful to the artifact its
   # kernel-level numbers were measured on.
   "flashinfer/msa_ops/cute_dsl/sparse_decode_nvfp4_sm100.py",
+  # The SM107 DeepGEMM-compatible MegaMoE kernel: CuTe DSL kernel bodies are compiler-lowered rather than ordinary Python (see the ruff format exclude).
+  "flashinfer/experimental/sm107_deepgemm_megamoe/kernel/",
   "build/",
 ]
 
@@ -293,3 +295,8 @@ ignore = [
 "flashinfer/experimental/b12x/**" = ["B007", "B008", "B009", "B010", "B011", "B018", "B905", "F401", "F811", "F841", "SIM105", "SIM114", "SIM115", "SIM117", "SIM300"]
 "tests/experimental/b12x/**" = ["B007", "B008", "B009", "B010", "B011", "B018", "B905", "F401", "F811", "F841", "SIM105", "SIM114", "SIM115", "SIM117", "SIM300"]
 "benchmarks/experimental/b12x/**" = ["B007", "B008", "B009", "B010", "B011", "B018", "B905", "F401", "F811", "F841", "SIM105", "SIM114", "SIM115", "SIM117", "SIM300"]
+
+[tool.ruff.format]
+# The SM107 DeepGEMM-compatible MegaMoE kernel is a CuTe DSL port of DeepGEMM: the DSL traces the AST of the function bodies and the line layout
+# carries meaning (K:<line> references into the CUDA kernel, one block per warp role), so it is kept out of the formatter. `ruff check` still runs on it.
+exclude = ["flashinfer/experimental/sm107_deepgemm_megamoe/kernel/*.py"]

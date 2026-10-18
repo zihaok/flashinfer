@@ -22,3 +22,13 @@ The experimental MoK training adapter (BF16 and MXFP8 routed experts) and CUDA
 schedules are adapted from cursor/mixture-of-kittens, Copyright 2026 Cursor
 Research, under Apache-2.0.
 Source: https://github.com/cursor/mixture-of-kittens/tree/caeb2963f855c7ad53bb50c8bbf211086405cb98
+
+The experimental SM107 DeepGEMM-compatible MegaMoE (flashinfer/experimental/sm107_deepgemm_megamoe/,
+flashinfer/mega_moe_deepgemm.py) is a CuTe DSL port of DeepGEMM's Rubin MegaMoE kernel
+sm107_fp8_fp4_mega_moe, of its host heuristics and of its Python API, Copyright (c) 2025 DeepSeek,
+under the MIT License (licenses/LICENSE.deepgemm.txt).
+Source: https://github.com/deepseek-ai/DeepGEMM (branch rubin-megamoe-a7a9277-1016, commit 3ec0eb4)
+The inline-PTX helpers and NVLink communication primitives of its kernel (kernel/ptx.py, ptx_d.py,
+ptx_g.py, comm.py, mma_warp.py) derive from FlashInfer's vendored NVIDIA CuTe DSL MegaMoE sources
+(BSD-3-Clause, Copyright (c) NVIDIA CORPORATION & AFFILIATES); the Triton staging kernel is adapted
+from vLLM's prepare_megamoe_inputs (Apache-2.0, Copyright contributors to the vLLM project).

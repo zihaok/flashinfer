@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import warnings
 from typing import Type
 
@@ -9,6 +10,12 @@ from .base import MegaKernelBackend, SplitKernelBackend, SplitKernelContext
 
 _SPLIT_KERNEL_REGISTRY: dict[str, Type[SplitKernelBackend]] = {}
 _MEGA_KERNEL_REGISTRY: dict[str, Type[MegaKernelBackend]] = {}
+# Mega kernels whose backend lives under ``flashinfer.experimental`` (kernel_name -> module that registers it with
+# ``@register_mega_kernel``). The module is imported on first use by ``create_mega_kernel``, never at ``import flashinfer.moe_ep`` time, so
+# the registry stays cheap and ``flashinfer.aot`` never imports ``flashinfer.experimental``.
+_LAZY_MEGA_KERNEL_MODULES: dict[str, str] = {
+    "sm107_mxfp8_mxfp4_bf16_deepgemm_cutedsl": "flashinfer.experimental.sm107_deepgemm_megamoe.backend",
+}
 # Pre-taxonomy kernel_name spellings -> canonical name. Resolvable for
 # backward compatibility, but WILL BE REMOVED in a future release; using one
 # emits a DeprecationWarning.
@@ -45,9 +52,16 @@ def _warn_if_deprecated_mega_name(name: str) -> None:
         )
 
 
+def _ensure_lazy_mega_kernel(name: str) -> None:
+    module = _LAZY_MEGA_KERNEL_MODULES.get(name)
+    if module is not None and name not in _MEGA_KERNEL_REGISTRY:
+        importlib.import_module(module)  # its @register_mega_kernel fills the registry
+
+
 def _available_mega_kernels() -> list[str]:
     return sorted(
-        n for n in _MEGA_KERNEL_REGISTRY if n not in _MEGA_KERNEL_DEPRECATED_ALIASES
+        {n for n in _MEGA_KERNEL_REGISTRY if n not in _MEGA_KERNEL_DEPRECATED_ALIASES}
+        | set(_LAZY_MEGA_KERNEL_MODULES)
     )
 
 
@@ -84,11 +98,12 @@ def is_mega_kernel_config(config: object) -> bool:
         name = _kernel_name(config)
     except TypeError:
         return False
-    return name in _MEGA_KERNEL_REGISTRY
+    return name in _MEGA_KERNEL_REGISTRY or name in _LAZY_MEGA_KERNEL_MODULES
 
 
 def create_mega_kernel(config: object) -> MegaKernelBackend:
     name = _kernel_name(config)
+    _ensure_lazy_mega_kernel(name)
     if name not in _MEGA_KERNEL_REGISTRY:
         available = _available_mega_kernels()
         raise KeyError(f"unknown mega kernel {name!r}; available: {available}")

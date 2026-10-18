@@ -494,3 +494,23 @@ from .backends.split.comm.cake.communication import (  # noqa: E402
 from .backends.split.comm.nvlink_two_sided.communication import (  # noqa: E402
     NVLinkTwoSidedAlltoAll,
 )
+
+
+# Config classes of experimental mega kernels, resolved on first access (PEP 562): the experimental config modules are pure Python
+# (no torch / CUDA / kernel imports) and importing one does not import the backend, which ``create_mega_kernel`` loads by name.
+_LAZY_EXPERIMENTAL_CONFIGS = {
+    "Sm107_Mxfp8_Mxfp4_Bf16_DeepgemmCutedsl_MegaMoeConfig": "flashinfer.experimental.sm107_deepgemm_megamoe.config",
+}
+
+
+def __getattr__(name: str):
+    module = _LAZY_EXPERIMENTAL_CONFIGS.get(name)
+    if module is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    import importlib
+
+    return getattr(importlib.import_module(module), name)
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_LAZY_EXPERIMENTAL_CONFIGS))
